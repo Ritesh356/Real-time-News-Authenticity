@@ -6,12 +6,12 @@ from flask_cors import CORS
 app = Flask(__name__)
 CORS(app)
 
-# Load the SVM model and TfidfVectorizer from the pickle files
+# Load the SVM model and Tf-idf vectorizer from the pickle files
 with open('svm_model.pkl', 'rb') as f:
-    model = pickle.load(f)
+    svm_classifier = pickle.load(f)
 
 with open('vectorizer.pkl', 'rb') as f:
-    vectorizer = pickle.load(f)
+    tfidf_vectorizer = pickle.load(f)
 
 @app.route('/')
 def home():
@@ -19,19 +19,25 @@ def home():
 
 @app.route('/predict', methods=['POST'])
 def predict():
-    # Get the text input from the form
-    text = request.form.get('text')
-    if text is not None:
-        # Transform the text using the TfidfVectorizer
-        text_transformed = vectorizer.transform([text])
+    # Accept either JSON or regular form payload
+    payload = request.get_json(silent=True)
+    article_text = None
 
-        # Make the prediction using the SVM model
-        prediction = model.predict(text_transformed)[0]
-
-        # Return the prediction as a JSON object
-        return jsonify({'prediction': int(prediction)})
+    if payload:
+        article_text = payload.get('text')
     else:
-        return jsonify({'error': 'Input text not provided.'})
+        article_text = request.form.get('text')
+
+    if article_text:
+        # Transform the user input using the loaded Tf-idf vectorizer
+        input_vector = tfidf_vectorizer.transform([article_text])
+
+        # Predict using the loaded SVM classifier
+        predicted_label = svm_classifier.predict(input_vector)[0]
+
+        return jsonify({'prediction': int(predicted_label)})
+
+    return jsonify({'error': 'Input text not provided.'}), 400
 
 if __name__ == '__main__':
     app.run(debug=True)

@@ -1,47 +1,63 @@
 # Fake News Detection Chrome Extension
 
-This is a Chrome extension that allows users to detect whether a news article is real or fake.
+A lightweight Chrome extension and Flask backend for classifying news text as real or fake.
+
+## Project Structure
+
+- `ML_model/`: contains the Flask app, model files, and browser extension assets.
+- `ML_model/app.py`: Flask server that loads the trained SVM model and returns predictions.
+- `ML_model/popup.html`: browser extension UI for entering news text.
+- `ML_model/popup.js`: sends text to the Flask backend and displays the prediction.
+- `ML_model/manifest.json`: Chrome extension manifest.
 
 ## Installation
 
-To install the extension, follow these steps:
+1. Clone or download the repository.
+2. Install Python 3.x if needed.
+3. Install the Python dependencies:
 
-1. Clone the repository or download the source code.
-2. Open Google Chrome and navigate to `chrome://extensions`.
-3. Turn on "Developer mode" using the toggle switch in the top right corner.
-4. Click the "Load unpacked" button and select the folder containing the source code.
+   ```bash
+   pip install -r ML_model/requirements.txt
+   ```
+
+## Running the Flask Backend
+
+1. Open a terminal and change to the model folder:
+
+   ```bash
+   cd ML_model
+   ```
+
+2. Start the Flask server:
+
+   ```bash
+   python app.py
+   ```
+
+3. The backend will listen on `http://127.0.0.1:5000`.
+
+## Loading the Chrome Extension
+
+1. Open Chrome and go to `chrome://extensions`.
+2. Enable Developer mode.
+3. Click `Load unpacked` and select the `ML_model` folder.
+4. Click the extension icon and enter the news text.
 
 ## Usage
 
-To use the extension, follow these steps:
+- Enter or paste the article text into the extension popup.
+- Click `Predict` to determine whether the text is likely real or fake.
+- The extension sends the text to the Flask backend and displays the result.
 
-1. Navigate to a web page containing a news article.
-2. Click on the extension icon in the top right corner of the Chrome window.
-3. Enter the text of the article into the text box.
-4. Click the "Predict" button to determine whether the article is real or fake.
+## Notes
 
-## Flask App
-
-To run the Flask app, follow these steps:
-
-1. Install Python 3.x on your system.
-2. Install the required packages using pip: `pip install -r requirements.txt`
-3. Run the Flask app: `python app.py`
-4. Navigate to `http://localhost:5000` in your web browser to access the web interface.
+- Make sure the Flask backend is running before using the extension.
+- The extension currently connects to `http://localhost:5000/predict`.
 
 ## Technologies Used
-JavaScript
-jQuery
-Flask
-Python
-HTML
-CSS
 
-## Contributors
-
-- Devansh 
-- Shobhan 
-- Krishna 
-- Omkar 
-
-## The project is made for internship work under Red Fibre 
+- Python
+- Flask
+- JavaScript
+- HTML
+- CSS

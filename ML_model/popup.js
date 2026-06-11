@@ -1,34 +1,32 @@
-// Get the form element from the webpage
-const form = document.getElementById('news-form');
+// Get the extension form element from the popup
+const newsForm = document.getElementById('news-form');
 
-// Listen for form submit event
-form.addEventListener('submit', async (event) => {
-  // Prevent the default form submission behavior
+// Listen for the form submit event
+newsForm.addEventListener('submit', async (event) => {
   event.preventDefault();
 
-  // Get the input text from the form
-  const input = document.getElementById('news-text').value;
+  // Read the news text entered by the user
+  const articleText = document.getElementById('news-text').value;
 
   try {
-    // Send a POST request to the Flask server to get the prediction
-    const response = await fetch('http://localhost:5000/predict', {
+    // Send text to the Flask backend for prediction
+    const serverResponse = await fetch('http://localhost:5000/predict', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({text: input}),
+      body: JSON.stringify({text: articleText}),
     });
 
-    // Check if the request was successful
-    if (response.ok) {
-      // Update the webpage's DOM to display the prediction result
-      const prediction = (await response.json()).prediction;
-      const resultDiv = document.getElementById('prediction-result');
-      resultDiv.innerText = prediction === 0 ? 'The news is Real' : 'The news is Fake';
+    if (serverResponse.ok) {
+      const jsonData = await serverResponse.json();
+      const classification = jsonData.prediction;
+      const outputElement = document.getElementById('prediction-result');
+      outputElement.innerText = classification === 0 ? 'The news is Real' : 'The news is Fake';
     } else {
-      console.error('Request failed:', response.status);
+      console.error('Prediction request failed:', serverResponse.status);
     }
   } catch (error) {
-    console.error('Request failed:', error);
+    console.error('Prediction request failed:', error);
   }
 });
