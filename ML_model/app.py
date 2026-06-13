@@ -1,43 +1,55 @@
 from flask import Flask, request, jsonify, render_template
 import pickle
-import numpy as np
+import re
 from flask_cors import CORS
 
-app = Flask(__name__)
-CORS(app)
+app = Flask(__name__, template_folder='templates')
+CORS(app, resources={r'/predict': {'origins': '*'}})
 
-# Load the SVM model and Tf-idf vectorizer from the pickle files
-with open('svm_model.pkl', 'rb') as f:
-    svm_classifier = pickle.load(f)
 
-with open('vectorizer.pkl', 'rb') as f:
-    tfidf_vectorizer = pickle.load(f)
+def normalize_text(article: str) -> str:
+    article = article.strip().lower()
+    article = re.sub(r'http[s]?://\S+', ' ', article)
+    article = re.sub(r'[^a-z0-9\s]', ' ', article)
+    article = re.sub(r'\s+', ' ', article)
+    return article
+
+
+with open('svm_model.pkl', 'rb') as model_file:
+    svm_classifier = pickle.load(model_file)
+
+with open('vectorizer.pkl', 'rb') as vector_file:
+    tfidf_vectorizer = pickle.load(vector_file)
+
 
 @app.route('/')
-def home():
+def home() -> str:
     return render_template('index.html')
 
+
 @app.route('/predict', methods=['POST'])
-def predict():
-    # Accept either JSON or regular form payload
-    payload = request.get_json(silent=True)
-    article_text = None
+def predict() -> tuple:
+    request_data = request.get_json(silent=True)
+    news_text = None
 
-    if payload:
-        article_text = payload.get('text')
+    if isinstance(request_data, dict):
+        news_text = request_data.get('text')
     else:
-        article_text = request.form.get('text')
+        news_text = request.form.get('text')
 
-    if article_text:
-        # Transform the user input using the loaded Tf-idf vectorizer
-        input_vector = tfidf_vectorizer.transform([article_text])
+    if not news_text:
+        return jsonify({'error': 'Article text is required.'}), 400
 
-        # Predict using the loaded SVM classifier
-        predicted_label = svm_classifier.predict(input_vector)[0]
+    cleaned_text = normalize_text(news_text)
+    features = tfidf_vectorizer.transform([cleaned_text])
+    predicted_label = int(svm_classifier.predict(features)[0])
+    label_name = 'Real news' if predicted_label == 0 else 'Fake news'
 
-        return jsonify({'prediction': int(predicted_label)})
+    return jsonify({
+        'prediction': predicted_label,
+        'label': label_name,
+    })
 
-    return jsonify({'error': 'Input text not provided.'}), 400
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host='127.0.0.1', port=5000, debug=True)

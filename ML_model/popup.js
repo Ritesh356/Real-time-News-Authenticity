@@ -1,32 +1,44 @@
-// Get the extension form element from the popup
-const newsForm = document.getElementById('news-form');
+document.addEventListener('DOMContentLoaded', () => {
+  const form = document.getElementById('news-form');
+  const textInput = document.getElementById('news-text');
+  const resultLabel = document.getElementById('prediction-result');
+  const submitButton = document.getElementById('submit-button');
+  const apiEndpoint = 'http://127.0.0.1:5000/predict';
 
-// Listen for the form submit event
-newsForm.addEventListener('submit', async (event) => {
-  event.preventDefault();
+  const updateResult = (message) => {
+    resultLabel.textContent = message;
+  };
 
-  // Read the news text entered by the user
-  const articleText = document.getElementById('news-text').value;
+  form.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const content = textInput.value.trim();
 
-  try {
-    // Send text to the Flask backend for prediction
-    const serverResponse = await fetch('http://localhost:5000/predict', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({text: articleText}),
-    });
-
-    if (serverResponse.ok) {
-      const jsonData = await serverResponse.json();
-      const classification = jsonData.prediction;
-      const outputElement = document.getElementById('prediction-result');
-      outputElement.innerText = classification === 0 ? 'The news is Real' : 'The news is Fake';
-    } else {
-      console.error('Prediction request failed:', serverResponse.status);
+    if (!content) {
+      updateResult('Please paste the news text before analyzing.');
+      return;
     }
-  } catch (error) {
-    console.error('Prediction request failed:', error);
-  }
+
+    submitButton.disabled = true;
+    updateResult('Analyzing the text…');
+
+    try {
+      const response = await fetch(apiEndpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: content }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Server responded with status ${response.status}`);
+      }
+
+      const data = await response.json();
+      updateResult(data.label || 'Unable to determine the news type.');
+    } catch (error) {
+      console.error('Prediction error:', error);
+      updateResult('Unable to reach the backend. Make sure the Flask app is running.');
+    } finally {
+      submitButton.disabled = false;
+    }
+  });
 });
